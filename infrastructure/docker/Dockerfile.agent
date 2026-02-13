@@ -1,0 +1,54 @@
+# ===========================================
+# AGENT WORKER DOCKERFILE
+# ===========================================
+
+FROM node:20-alpine AS base
+
+ARG AGENT_NAME
+ENV AGENT_NAME=${AGENT_NAME}
+
+FROM base AS deps
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY agents/${AGENT_NAME}/package.json ./agents/${AGENT_NAME}/
+
+RUN npm ci
+
+FROM base AS builder
+WORKDIR /app
+
+ARG AGENT_NAME
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build shared packages first
+RUN npm run build --workspace=packages/shared
+
+# Build the specific agent
+RUN npm run build --workspace=agents/${AGENT_NAME}
+
+FROM base AS runner
+WORKDIR /app
+
+ARG AGENT_NAME
+ENV NODE_ENV=production
+ENV AGENT_NAME=${AGENT_NAME}
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 agentworker
+
+COPY --from=builder /app/agents/${AGENT_NAME}/dist ./agents/${AGENT_NAME}/dist
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+RUN mkdir -p /app/logs
+RUN chown -R agentworker:nodejs /app
+
+USER agentworker
+
+CMD ["sh", "-c", "node agents/${AGENT_NAME}/dist/worker.js"]

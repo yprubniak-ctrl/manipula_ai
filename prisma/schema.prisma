@@ -1,0 +1,354 @@
+// ===========================================
+// MANIPULA PLATFORM - DATABASE SCHEMA
+// ===========================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// USERS & AUTHENTICATION
+// ===========================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  projects      Project[]
+  apiKeys       ApiKey[]
+  
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  name        String
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  
+  @@map("api_keys")
+}
+
+// ===========================================
+// PROJECTS & STATE
+// ===========================================
+
+model Project {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  status          ProjectStatus   @default(INITIALIZING)
+  
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Project configuration
+  config          Json            @default("{}")
+  constraints     Json            @default("{}")
+  
+  // Current state
+  currentStateId  String?         @unique
+  currentState    ProjectState?   @relation("CurrentState", fields: [currentStateId], references: [id])
+  
+  // Relationships
+  states          ProjectState[]  @relation("ProjectStates")
+  executions      Execution[]
+  deployments     Deployment[]
+  artifacts       Artifact[]
+  
+  // Metadata
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  INITIALIZING
+  SPEC_GENERATION
+  BACKEND_GENERATION
+  FRONTEND_GENERATION
+  QA_VALIDATION
+  DEPLOYMENT
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+model ProjectState {
+  id              String        @id @default(cuid())
+  version         Int
+  
+  projectId       String
+  project         Project       @relation("ProjectStates", fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // State data
+  specification   Json?
+  backendSchema   Json?
+  frontendSchema  Json?
+  qaResults       Json?
+  
+  // State metadata
+  phase           String
+  isValid         Boolean       @default(false)
+  validationErrors Json?
+  
+  // Relationships
+  currentForProject Project?    @relation("CurrentState")
+  
+  createdAt       DateTime      @default(now())
+  createdBy       String        // Agent or user ID
+  
+  @@unique([projectId, version])
+  @@map("project_states")
+}
+
+// ===========================================
+// AGENT EXECUTIONS
+// ===========================================
+
+model Execution {
+  id              String          @id @default(cuid())
+  
+  projectId       String
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  agentType       AgentType
+  status          ExecutionStatus @default(PENDING)
+  
+  // Input/Output
+  input           Json
+  output          Json?
+  patch           Json?           // State patch to apply
+  
+  // Execution metadata
+  startedAt       DateTime?
+  completedAt     DateTime?
+  durationMs      Int?
+  
+  // Error handling
+  error           String?
+  retryCount      Int             @default(0)
+  maxRetries      Int             @default(3)
+  
+  // Cost tracking
+  tokensUsed      Int?
+  costUsd         Decimal?        @db.Decimal(10, 4)
+  model           String?
+  
+  createdAt       DateTime        @default(now())
+  
+  @@index([projectId, agentType])
+  @@index([status])
+  @@map("executions")
+}
+
+enum AgentType {
+  IDEA
+  BACKEND
+  FRONTEND
+  QA
+  DEVOPS
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRY
+  CANCELLED
+}
+
+// ===========================================
+// ARTIFACTS & FILES
+// ===========================================
+
+model Artifact {
+  id              String        @id @default(cuid())
+  
+  projectId       String
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  type            ArtifactType
+  name            String
+  path            String        // Storage path
+  size            Int           // Bytes
+  mimeType        String?
+  
+  metadata        Json?
+  
+  createdAt       DateTime      @default(now())
+  createdBy       String        // Agent or user ID
+  
+  @@index([projectId, type])
+  @@map("artifacts")
+}
+
+enum ArtifactType {
+  SOURCE_CODE
+  COMPILED
+  DOCUMENTATION
+  TEST_RESULTS
+  DEPLOYMENT_CONFIG
+  DATABASE_SCHEMA
+  API_SPEC
+}
+
+// ===========================================
+// DEPLOYMENTS
+// ===========================================
+
+model Deployment {
+  id              String            @id @default(cuid())
+  
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  provider        DeploymentProvider
+  status          DeploymentStatus  @default(PENDING)
+  
+  // Deployment info
+  url             String?
+  environment     String            @default("production")
+  version         String?
+  
+  // Configuration
+  config          Json?
+  
+  // Metadata
+  deployedAt      DateTime?
+  deployedBy      String?
+  
+  error           String?
+  logs            String?
+  
+  createdAt       DateTime          @default(now())
+  
+  @@index([projectId])
+  @@map("deployments")
+}
+
+enum DeploymentProvider {
+  VERCEL
+  RAILWAY
+  FLY
+  RENDER
+  AWS
+  GCP
+  AZURE
+  DOCKER
+  KUBERNETES
+}
+
+enum DeploymentStatus {
+  PENDING
+  BUILDING
+  DEPLOYING
+  ACTIVE
+  FAILED
+  CANCELLED
+}
+
+// ===========================================
+// FEEDBACK & QA
+// ===========================================
+
+model Feedback {
+  id              String        @id @default(cuid())
+  
+  projectId       String
+  executionId     String?
+  
+  type            FeedbackType
+  severity        Severity
+  
+  message         String
+  details         Json?
+  
+  resolved        Boolean       @default(false)
+  resolvedAt      DateTime?
+  resolution      String?
+  
+  createdAt       DateTime      @default(now())
+  createdBy       String
+  
+  @@index([projectId, resolved])
+  @@map("feedback")
+}
+
+enum FeedbackType {
+  ERROR
+  WARNING
+  SUGGESTION
+  VALIDATION
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// ===========================================
+// SYSTEM METRICS
+// ===========================================
+
+model Metric {
+  id              String        @id @default(cuid())
+  
+  name            String
+  value           Decimal       @db.Decimal(20, 4)
+  unit            String?
+  
+  tags            Json?
+  
+  timestamp       DateTime      @default(now())
+  
+  @@index([name, timestamp])
+  @@map("metrics")
+}
+
+model Cost {
+  id              String        @id @default(cuid())
+  
+  projectId       String?
+  executionId     String?
+  
+  provider        String
+  model           String
+  tokensUsed      Int
+  costUsd         Decimal       @db.Decimal(10, 4)
+  
+  timestamp       DateTime      @default(now())
+  
+  @@index([projectId])
+  @@index([timestamp])
+  @@map("costs")
+}

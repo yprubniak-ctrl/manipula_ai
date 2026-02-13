@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: manipula-postgres
+    environment:
+      POSTGRES_DB: manipula
+      POSTGRES_USER: manipula
+      POSTGRES_PASSWORD: manipula_dev_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U manipula']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Message Queue
+  redis:
+    image: redis:7-alpine
+    container_name: manipula-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Orchestrator Service
+  orchestrator:
+    build:
+      context: .
+      dockerfile: ./apps/orchestrator/Dockerfile
+    container_name: manipula-orchestrator
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://manipula:manipula_dev_password@postgres:5432/manipula
+      REDIS_URL: redis://redis:6379
+      API_URL: http://api:3000
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./apps/orchestrator:/app/apps/orchestrator
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/orchestrator/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: pnpm dev
+
+  # API Gateway
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: manipula-api
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://manipula:manipula_dev_password@postgres:5432/manipula
+      REDIS_URL: redis://redis:6379
+      ORCHESTRATOR_URL: http://orchestrator:4000
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: pnpm dev
+
+  # Web Dashboard
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    container_name: manipula-web
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+    depends_on:
+      - api
+    command: pnpm dev
+
+  # Agents Runtime
+  agents-runtime:
+    build:
+      context: .
+      dockerfile: ./apps/agents-runtime/Dockerfile
+    container_name: manipula-agents-runtime
+    environment:
+      NODE_ENV: development
+      REDIS_URL: redis://redis:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LOCAL_MODEL_ENDPOINT: ${LOCAL_MODEL_ENDPOINT:-}
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./apps/agents-runtime:/app/apps/agents-runtime
+      - ./agents:/app/agents
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/agents-runtime/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: pnpm dev
+
+  # PgAdmin (Optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: manipula-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@manipula.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    profiles:
+      - tools
+
+  # Redis Commander (Optional - for Redis management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: manipula-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - '8081:8081'
+    depends_on:
+      - redis
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  default:
+    name: manipula-network
+    driver: bridge

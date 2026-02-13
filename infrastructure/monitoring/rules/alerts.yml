@@ -1,0 +1,200 @@
+# ===========================================
+# PROMETHEUS ALERTING RULES
+# ===========================================
+
+groups:
+  - name: manipula_system
+    interval: 30s
+    rules:
+      # API Service Alerts
+      - alert: APIServiceDown
+        expr: up{job="manipula-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API service is down"
+          description: "API service {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{job="manipula-api",status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on API"
+          description: "API error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="manipula-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is {{ $value }}s on {{ $labels.instance }}."
+
+      # Orchestrator Alerts
+      - alert: OrchestratorDown
+        expr: up{job="manipula-orchestrator"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Orchestrator service is down"
+          description: "Orchestrator {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: HighProjectQueueBacklog
+        expr: project_queue_length > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High project queue backlog"
+          description: "Project queue has {{ $value }} items waiting for more than 10 minutes."
+
+      # Agent Worker Alerts
+      - alert: AgentWorkerDown
+        expr: up{job="manipula-agents"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent worker is down"
+          description: "Agent worker {{ $labels.instance }} has been down for more than 5 minutes."
+
+      - alert: HighAgentExecutionFailureRate
+        expr: rate(agent_execution_failures_total[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High agent execution failure rate"
+          description: "Agent {{ $labels.agent_type }} has failure rate of {{ $value | humanizePercentage }}."
+
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL high connection usage"
+          description: "PostgreSQL is using {{ $value | humanizePercentage }} of max connections."
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration[5m]) > 60
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "Slow queries detected with average duration {{ $value }}s."
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis is using {{ $value | humanizePercentage }} of max memory."
+
+      # Cost Tracking Alerts
+      - alert: HighLLMCost
+        expr: rate(llm_cost_usd_total[1h]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High LLM costs detected"
+          description: "LLM costs are ${{ $value }}/hour, exceeding budget threshold."
+
+      - alert: CostLimitExceeded
+        expr: project_cost_usd > project_cost_limit_usd
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Project cost limit exceeded"
+          description: "Project {{ $labels.project_id }} has exceeded cost limit: ${{ $value }}."
+
+      # Resource Alerts
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / node_memory_MemTotal_bytes * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% remaining on {{ $labels.instance }}."
+
+  - name: manipula_business
+    interval: 1m
+    rules:
+      # Project Success Rate
+      - alert: LowProjectSuccessRate
+        expr: rate(projects_completed_total[1h]) / rate(projects_started_total[1h]) < 0.7
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low project success rate"
+          description: "Project success rate is {{ $value | humanizePercentage }} over the last hour."
+
+      # Deployment Failures
+      - alert: HighDeploymentFailureRate
+        expr: rate(deployments_failed_total[1h]) / rate(deployments_total[1h]) > 0.2
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High deployment failure rate"
+          description: "Deployment failure rate is {{ $value | humanizePercentage }}."
+
+      # QA Feedback Loop
+      - alert: ExcessiveQARetries
+        expr: avg(qa_retry_count) > 3
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "Excessive QA retries detected"
+          description: "Average QA retry count is {{ $value }}, indicating potential quality issues."

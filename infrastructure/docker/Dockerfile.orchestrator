@@ -1,0 +1,47 @@
+# ===========================================
+# ORCHESTRATOR SERVICE DOCKERFILE
+# ===========================================
+
+FROM node:20-alpine AS base
+
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY orchestrator/package.json ./orchestrator/
+
+RUN npm ci
+
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build shared packages first
+RUN npm run build --workspace=packages/shared
+
+# Build orchestrator
+RUN npm run build --workspace=orchestrator
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 orchestrator
+
+COPY --from=builder /app/orchestrator/dist ./orchestrator/dist
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+RUN mkdir -p /app/state /app/artifacts /app/logs
+RUN chown -R orchestrator:nodejs /app
+
+USER orchestrator
+
+CMD ["node", "orchestrator/dist/index.js"]

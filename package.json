@@ -1,0 +1,42 @@
+{
+  "name": "manipula-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentic AI Platform for End-to-End Software Development",
+  "workspaces": [
+    "apps/*",
+    "agents/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "type-check": "turbo run type-check",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "deploy:staging": "pnpm run build && ./infrastructure/scripts/deploy-staging.sh",
+    "deploy:prod": "pnpm run build && ./infrastructure/scripts/deploy-prod.sh",
+    "agents:test": "pnpm --filter \"@manipula/agent-*\" test",
+    "setup": "./infrastructure/scripts/setup-dev.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.1.0",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.12.0"
+}
