@@ -1,0 +1,24 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "testMatch": ["**/__tests__/**/*.test.ts"],
+  "moduleNameMapper": {
+    "^@manipula/shared$": "<rootDir>/../shared/src/index.ts",
+    "^nanoid$": "<rootDir>/src/__tests__/__mocks__/nanoid.ts"
+  },
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", {
+      "tsconfig": {
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "module": "commonjs",
+        "target": "ES2020",
+        "baseUrl": ".",
+        "paths": {
+          "@manipula/shared": ["../shared/src/index.ts"]
+        }
+      }
+    }]
+  }
+}
