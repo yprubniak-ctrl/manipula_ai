@@ -51,7 +51,7 @@ export interface SpecificationState {
   coreFeatures: Feature[];
   technicalRequirements: TechnicalRequirements;
   constraints: ProjectConstraints;
-  acceptance Criteria: string[];
+  acceptanceCriteria: string[];
 }
 
 export interface Feature {
