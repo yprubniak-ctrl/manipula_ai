@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 // ============================================================================
 
 export enum AgentType {
+  PRODUCT = 'product',
   IDEA_SPEC = 'idea-spec',
   BACKEND_GEN = 'backend-gen',
   FRONTEND_GEN = 'frontend-gen',
@@ -213,6 +214,7 @@ export const DEFAULT_CONFIG = {
 } as const;
 
 export const AGENT_PRIORITIES = {
+  [AgentType.PRODUCT]: 1,
   [AgentType.IDEA_SPEC]: 1,
   [AgentType.BACKEND_GEN]: 2,
   [AgentType.FRONTEND_GEN]: 3,

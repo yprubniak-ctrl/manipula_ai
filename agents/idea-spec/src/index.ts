@@ -9,8 +9,8 @@ import {
   AgentInput,
   AgentOutput,
   ProjectPhase,
-  createStatePatch,
 } from '@manipula/shared';
+import { createStatePatch } from '@manipula/state-manager';
 
 // ============================================================================
 // Idea/Specification Agent
