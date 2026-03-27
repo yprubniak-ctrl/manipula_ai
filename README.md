@@ -6,6 +6,18 @@
 
 Manipula is an agent-orchestrated AI platform designed to automate the full software development lifecycle — from idea to live deployment. Instead of generating isolated outputs, Manipula coordinates specialized AI agents through a structured global state and deterministic pipeline.
 
+
+## ⚠️ Current MVP Scope (March 2026)
+
+This repository currently ships a **backend orchestration engine MVP** (`packages/orchestrator`) plus core shared packages. The full multi-app platform shown in historical diagrams is not fully present in this branch yet.
+
+For a working baseline, use:
+- `pnpm build`
+- `pnpm test`
+- `pnpm type-check`
+
+These commands are scoped to the MVP engine package.
+
 ## 🎯 Vision
 
 To become the smallest self-sufficient digital product unit — inspired by the Roman "manipula" — where a compact, orchestrated system can independently build and ship software at startup speed.
@@ -178,11 +190,8 @@ pnpm test:coverage
 
 ## 📚 Documentation
 
-- [Architecture Overview](./docs/architecture.md)
-- [Agent Development Guide](./docs/agent-development.md)
-- [State Management](./docs/state-management.md)
+- [Architecture Overview](./docs/ARCHITECTURE.md)
 - [API Reference](./docs/api-reference.md)
-- [Deployment Guide](./docs/deployment.md)
 - [Contributing Guidelines](./docs/contributing.md)
 
 ## 🔧 Configuration

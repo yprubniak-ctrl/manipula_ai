@@ -1,5 +1,7 @@
 # Manipula Platform - Project Structure
 
+> **Status note (March 27, 2026):** This document describes the target/full platform layout. The currently validated MVP in this branch is centered on `packages/orchestrator` with supporting shared packages.
+
 ## Repository Overview
 
 ```
