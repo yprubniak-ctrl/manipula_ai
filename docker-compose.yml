@@ -87,6 +87,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    profiles:
+      - full-stack
     command: pnpm dev
 
   # Web Dashboard
@@ -108,6 +110,8 @@ services:
       - /app/apps/web/.next
     depends_on:
       - api
+    profiles:
+      - full-stack
     command: pnpm dev
 
   # Agents Runtime
@@ -133,6 +137,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    profiles:
+      - full-stack
     command: pnpm dev
 
   # PgAdmin (Optional - for database management)
