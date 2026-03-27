@@ -2,6 +2,10 @@
 
 Get up and running with Manipula in under 10 minutes!
 
+
+> **MVP status (March 2026):** This repo currently supports a working orchestrator-engine package MVP.
+> Use `pnpm test`, `pnpm build`, and `pnpm type-check` from the repo root for validated workflows.
+
 ## Prerequisites
 
 Before starting, ensure you have:
