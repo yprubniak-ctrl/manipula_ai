@@ -22,7 +22,11 @@
     "deploy:staging": "pnpm run build && ./infrastructure/scripts/deploy-staging.sh",
     "deploy:prod": "pnpm run build && ./infrastructure/scripts/deploy-prod.sh",
     "agents:test": "pnpm --filter \"@manipula/agent-*\" test",
-    "setup": "./infrastructure/scripts/setup-dev.sh"
+    "setup": "./infrastructure/scripts/setup-dev.sh",
+    "mvp:dev": "turbo run dev --filter=@manipula/orchestrator-engine",
+    "mvp:build": "turbo run build --filter=@manipula/orchestrator-engine",
+    "mvp:test": "turbo run test --filter=@manipula/orchestrator-engine",
+    "mvp:type-check": "turbo run type-check --filter=@manipula/orchestrator-engine"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
