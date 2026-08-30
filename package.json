@@ -2,36 +2,17 @@
   "name": "manipula-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "Agentic AI Platform for End-to-End Software Development",
-  "workspaces": [
-    "apps/*",
-    "agents/*",
-    "packages/*"
-  ],
+  "description": "Agentic orchestration engine for end-to-end software development pipelines",
   "scripts": {
-    "dev": "pnpm --filter @manipula/orchestrator-engine dev",
-    "build": "pnpm --filter @manipula/orchestrator-engine build",
-    "test": "pnpm --filter @manipula/orchestrator-engine test",
-    "lint": "echo \"Lint is not configured for MVP yet\"",
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@manipula/orchestrator-engine",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "type-check": "pnpm --filter @manipula/orchestrator-engine type-check",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "agents:test": "pnpm --filter \"@manipula/agent-*\" test",
-    "setup": "./infrastructure/scripts/setup-dev.sh",
-    "mvp:dev": "turbo run dev --filter=@manipula/orchestrator-engine",
-    "mvp:build": "turbo run build --filter=@manipula/orchestrator-engine",
-    "mvp:test": "turbo run test --filter=@manipula/orchestrator-engine",
-    "mvp:type-check": "turbo run type-check --filter=@manipula/orchestrator-engine"
+    "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
-    "eslint": "^8.55.0",
-    "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.1.0",
     "turbo": "^1.11.0",
     "typescript": "^5.3.3"
