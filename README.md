@@ -22,10 +22,11 @@ engine, implemented against [manipula-orchestrator-spec.md](./manipula-orchestra
 - **Budget controller** — per-project USD limit with downgrade / freeze /
   hard-stop thresholds
 - **QA feedback loop** that routes issues back to the responsible stage
-- **Model router** — tier-based selection with a working local **Ollama**
-  client and cloud fallback stubs
+- **Model router** — tier-based selection across a real **Anthropic cloud
+  client** (structured outputs via JSON schema, refusal fallbacks on Opus 5)
+  and a local **Ollama** client
 - **Snapshots & rollback** hooks, structured logging, Prometheus-style metrics
-- 27 unit tests
+- 38 unit tests
 
 `packages/shared` (`@manipula/shared`) — types, pipeline/stage definitions,
 budget and failure policies shared across packages.
@@ -34,10 +35,12 @@ budget and failure policies shared across packages.
 
 - **Stage agents** (`IdeaAgent`, `ArchAgent`, `BackendAgent`, …) — the agent
   registry is empty, so the pipeline cannot run end-to-end yet
-- **Cloud LLM client** — `CloudLLMClient.complete()` throws; only the Ollama
-  client is real
 - **State persistence** — `StateStore` is an interface with no implementation
 - **CLI / API / UI** — nothing user-facing yet
+
+The cloud client reads its API key from `ModelRouterConfig.cloudApiKey` —
+pass `process.env.ANTHROPIC_API_KEY` when constructing the router (see
+`.env.example`).
 
 ## Quick start
 

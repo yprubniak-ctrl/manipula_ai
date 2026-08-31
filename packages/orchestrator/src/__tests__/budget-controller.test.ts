@@ -38,7 +38,7 @@ describe('BudgetController', () => {
 
   test('recordUsage updates spent_usd and token counts', async () => {
     const state = makeState(10, 0);
-    await new BudgetController(state).recordUsage({ model: 'claude-haiku-4', input_tokens: 1000, output_tokens: 500 });
+    await new BudgetController(state).recordUsage({ model: 'claude-haiku-4-5', input_tokens: 1000, output_tokens: 500 });
     expect(state.budget.spent_usd).toBeGreaterThan(0);
     expect(state.budget.token_counts.input_tokens).toBe(1000);
     expect(state.budget.token_counts.output_tokens).toBe(500);
@@ -75,6 +75,6 @@ describe('BudgetController', () => {
 
   test('preAuthorize throws when estimated cost exceeds limit', async () => {
     const state = makeState(1, 0.99);
-    await expect(new BudgetController(state).preAuthorize('claude-opus-4', 1000000)).rejects.toThrow(BudgetExhaustedError);
+    await expect(new BudgetController(state).preAuthorize('claude-opus-5', 1000000)).rejects.toThrow(BudgetExhaustedError);
   });
 });

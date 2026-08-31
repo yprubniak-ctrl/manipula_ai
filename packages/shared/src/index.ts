@@ -128,13 +128,14 @@ export const NON_CORE_STAGES: Set<OrchestratorStage> = new Set(['FRONTEND_GEN'])
 // Model Cost Definitions (Spec Section 7)
 // ============================================================================
 
+// USD per token (Anthropic first-party API rates, August 2026)
 export const MODEL_COSTS_PER_TOKEN: Record<string, { input: number; output: number }> = {
-  'claude-opus-4':     { input: 0.000015,   output: 0.000075   },
-  'claude-sonnet-4':   { input: 0.000003,   output: 0.000015   },
-  'claude-haiku-4':    { input: 0.00000025, output: 0.00000125 },
-  'ollama/llama3:70b': { input: 0.0,        output: 0.0        },
-  'ollama/llama3:8b':  { input: 0.0,        output: 0.0        },
-  'ollama/llama3:1b':  { input: 0.0,        output: 0.0        },
+  'claude-opus-5':     { input: 0.000005, output: 0.000025 },
+  'claude-sonnet-5':   { input: 0.000002, output: 0.00001  },
+  'claude-haiku-4-5':  { input: 0.000001, output: 0.000005 },
+  'ollama/llama3:70b': { input: 0.0,      output: 0.0      },
+  'ollama/llama3:8b':  { input: 0.0,      output: 0.0      },
+  'ollama/llama3:1b':  { input: 0.0,      output: 0.0      },
 };
 
 // ============================================================================
@@ -142,9 +143,9 @@ export const MODEL_COSTS_PER_TOKEN: Record<string, { input: number; output: numb
 // ============================================================================
 
 export const MODEL_TIERS: Record<StageComplexity, string[]> = {
-  high:   ['claude-opus-4',   'claude-sonnet-4',   'ollama/llama3:70b'],
-  medium: ['claude-sonnet-4', 'claude-haiku-4',    'ollama/llama3:70b'],
-  low:    ['claude-haiku-4',  'ollama/llama3:8b',  'ollama/llama3:1b'],
+  high:   ['claude-opus-5',   'claude-sonnet-5',   'ollama/llama3:70b'],
+  medium: ['claude-sonnet-5', 'claude-haiku-4-5',  'ollama/llama3:70b'],
+  low:    ['claude-haiku-4-5', 'ollama/llama3:8b', 'ollama/llama3:1b'],
 };
 
 export const STAGE_COMPLEXITY: Record<string, StageComplexity> = {
