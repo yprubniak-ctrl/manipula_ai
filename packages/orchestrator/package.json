@@ -8,7 +8,8 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "test": "jest --config jest.config.json",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "pipeline": "node dist/cli/run.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
