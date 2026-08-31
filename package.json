@@ -8,6 +8,7 @@
     "dev": "turbo run dev --filter=@manipula/orchestrator-engine",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
+    "pipeline": "turbo run build --output-logs=errors-only && node packages/orchestrator/dist/cli/run.js",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "turbo run clean && rm -rf node_modules"
   },

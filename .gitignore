@@ -36,3 +36,6 @@ Thumbs.db
 
 # Turbo
 .turbo/
+
+# Pipeline run state
+.manipula/

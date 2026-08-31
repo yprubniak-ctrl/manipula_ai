@@ -88,7 +88,19 @@ export class Orchestrator {
 
     try {
       let state  = await this.stateStore.load(projectId);
+      // A stage can bump meta.version more than once (transition + each patch),
+      // so the optimistic-lock expectation must be the version actually stored,
+      // not version - 1.
+      let persistedVersion = state.meta.version;
       const budget = new BudgetController(state, undefined, this.router);
+
+      // The executor clones state on every transition/patch while the budget
+      // controller keeps mutating the object it was constructed with — sync the
+      // authoritative budget back into the current state before every persist.
+      const persist = async (): Promise<void> => {
+        state.budget = budget.getState();
+        persistedVersion = await this.persistState(state, persistedVersion, projectLogger);
+      };
 
       const executor = new StageExecutor(this.registry, this.snapshotManager, projectLogger);
       const qaLoop   = new QAFeedbackLoop(this.registry, this.snapshotManager, projectLogger);
@@ -104,7 +116,7 @@ export class Orchestrator {
           projectLogger.warn(`Prerequisites missing for ${spec.name}: ${missingPrereqs.join(', ')}`);
           state.status.stage = 'FAILED';
           state.status.error = `Missing prerequisites: ${missingPrereqs.join(', ')}`;
-          await this.persistState(state, projectLogger);
+          await persist();
           return state;
         }
 
@@ -115,7 +127,7 @@ export class Orchestrator {
           projectLogger.warn(`Budget gate blocked stage ${spec.name}: ${message}`);
           state.status.stage = 'FAILED';
           state.status.error = message;
-          await this.persistState(state, projectLogger);
+          await persist();
           return state;
         }
 
@@ -124,7 +136,7 @@ export class Orchestrator {
           if (approvalRequired && !state.status.awaiting_approval) {
             state.status.awaiting_approval = true;
             state.status.stage = 'PENDING_REVIEW';
-            await this.persistState(state, projectLogger);
+            await persist();
             projectLogger.info(`Paused for approval at stage: ${spec.name}`);
             return state;
           }
@@ -141,7 +153,7 @@ export class Orchestrator {
         }
 
         budgetUtilizationRatio.set({ project_id: projectId }, budget.getUtilizationRatio());
-        await this.persistState(state, projectLogger);
+        await persist();
 
         const terminalStages: OrchestratorStage[] = ['FAILED', 'PAUSED', 'PENDING_REVIEW'];
         if (terminalStages.includes(state.status.stage)) {
@@ -154,7 +166,7 @@ export class Orchestrator {
       state.status.stage_status = 'success';
       state.meta.version       += 1;
       state.meta.updated_at    = new Date().toISOString();
-      await this.persistState(state, projectLogger);
+      await persist();
       projectLogger.info('Project execution completed successfully');
       return state;
     } finally {
@@ -177,9 +189,14 @@ export class Orchestrator {
     });
   }
 
-  private async persistState(state: OrchestratorProjectState, log: Logger): Promise<void> {
+  private async persistState(
+    state: OrchestratorProjectState,
+    expectedVersion: number,
+    log: Logger
+  ): Promise<number> {
     try {
-      await this.stateStore.save(state, state.meta.version - 1);
+      await this.stateStore.save(state, expectedVersion);
+      return state.meta.version;
     } catch (err) {
       if (err instanceof OptimisticLockError) {
         log.warn('Optimistic lock conflict during save — reload and retry');

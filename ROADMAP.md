@@ -11,14 +11,13 @@ no agents. The path to a first end-to-end run:
   with real, current model IDs and prices~~ (Opus 5 / Sonnet 5 / Haiku 4.5)
 - ~~Unit tests with a mocked SDK~~
 
-## Step 3 — First agent, persistence, minimal runner
+## Step 3 — First agent, persistence, minimal runner ✅ (done)
 
-- `IdeaAgent` for the `SPECIFYING` stage on the engine's `BaseAgent`
-  (prompt starting point: `docs/legacy/idea-spec-prompts.md`)
-- A simple `StateStore` implementation (file-based or SQLite) so runs survive
-  a process restart
-- Register agents in `AgentRegistry`; a minimal CLI entry point that takes a
-  raw idea and runs the pipeline until the first missing agent
+- ~~`IdeaAgent` for the `SPECIFYING` stage on the engine's `BaseAgent`~~
+- ~~A simple `StateStore` implementation (file-based) so runs survive a
+  process restart~~ (`FileStateStore`, optimistic locking, atomic writes)
+- ~~Register agents in `AgentRegistry`; a minimal CLI entry point~~
+  (`pnpm pipeline "<idea>"` / `--project <id>` to resume)
 
 ## Step 4 — Full pipeline
 

@@ -34,6 +34,11 @@ export { RollbackHandler } from './snapshot/rollback';
 export { BaseAgent } from './agents/base-agent';
 export { AgentRegistry, agentRegistry } from './agents/registry';
 export type { AgentFactory } from './agents/registry';
+export { IdeaAgent, SPEC_SCHEMA } from './agents/idea-agent';
+export { registerDefaultAgents } from './agents/defaults';
+
+// State persistence
+export { FileStateStore, ProjectNotFoundError } from './state/file-state-store';
 
 // QA
 export { QAFeedbackLoop } from './qa/feedback-loop';

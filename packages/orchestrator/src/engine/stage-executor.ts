@@ -68,13 +68,17 @@ export class StageExecutor {
       stageLogger.info(`Executing stage attempt ${attempt + 1}/${maxRetries}`);
 
       let response: AgentResponse;
+      let timeoutHandle: NodeJS.Timeout | undefined;
 
       try {
         response = await Promise.race([
           agent.execute(current),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Stage execution timed out')), timeoutMs)
-          ),
+          new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(
+              () => reject(new Error('Stage execution timed out')),
+              timeoutMs
+            );
+          }),
         ]);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -86,6 +90,8 @@ export class StageExecutor {
           warnings: [],
           logs: [{ level: 'error', message }],
         };
+      } finally {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
       }
 
       const durationSec = (Date.now() - startMs) / 1000;
