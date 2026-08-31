@@ -143,6 +143,9 @@ export class StageExecutor {
       } else if (response.status === 'needs_info') {
         current = this.stateMachine.transition(current, 'PENDING_REVIEW');
         current.status.stage_status = 'skipped';
+        const message = response.warnings[0] ?? `Stage ${spec.name} requested additional information`;
+        current.status.error = message;
+        current.logs.push({ stage: spec.name, timestamp: new Date().toISOString(), needs_info: message });
         stageDurationSeconds.observe({ stage: spec.name, agent: spec.agentName, status: 'needs_info' }, durationSec);
         stagesTotal.inc({ stage: spec.name, status: 'needs_info' });
         return current;

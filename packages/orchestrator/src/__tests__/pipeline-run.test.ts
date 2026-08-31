@@ -73,6 +73,29 @@ describe('pipeline run with FileStateStore and IdeaAgent', () => {
     expect(persisted.history.length).toBeGreaterThan(0);
   });
 
+  test('needs_info pauses the run and persists the explanation', async () => {
+    const registry = new AgentRegistry();
+    registerDefaultAgents(registry);
+
+    const initial = makeProjectState({ id: 'proj_short', rawIdea: 'app' });
+    await store.save(initial, 1);
+
+    const orchestrator = new Orchestrator({
+      registry,
+      router: makeRouter(),
+      stateStore: store,
+    });
+
+    const final = await orchestrator.executeProject('proj_short');
+
+    expect(final.status.stage).toBe('PENDING_REVIEW');
+    expect(final.status.error).toMatch(/too short/);
+
+    const persisted = await store.load('proj_short');
+    expect(persisted.status.error).toMatch(/too short/);
+    expect(persisted.logs.some((l) => 'needs_info' in l)).toBe(true);
+  });
+
   test('resumed project skips the completed SPECIFYING stage', async () => {
     const registry = new AgentRegistry();
     registerDefaultAgents(registry);
