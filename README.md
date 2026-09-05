@@ -6,10 +6,11 @@ frontend → QA → deploy. Specialized AI agents advance a single versioned
 project state through a deterministic stage pipeline, with budget control and
 a QA feedback loop.
 
-**Current status: the engine runs the first pipeline stage end-to-end.** A raw
-idea goes through the `IdeaAgent` (SPECIFYING) and the resulting spec is
-persisted to disk; the pipeline then stops at the first stage that has no
-agent yet. See the [roadmap](./ROADMAP.md) for what comes next.
+**Current status: the full pipeline runs end-to-end.** A raw idea goes
+through all six stages — spec, architecture, backend, frontend, QA (with an
+automatic fix-and-re-review loop), deployment setup — and the generated
+project files are written to a workspace directory on disk. See the
+[roadmap](./ROADMAP.md) for what comes next.
 
 ## What works today
 
@@ -27,22 +28,28 @@ engine, implemented against [manipula-orchestrator-spec.md](./manipula-orchestra
   client** (structured outputs via JSON schema, refusal fallbacks on Opus 5)
   and a local **Ollama** client
 - **Snapshots & rollback** hooks, structured logging, Prometheus-style metrics
-- **`IdeaAgent`** — the SPECIFYING stage: turns a raw idea into a structured
-  product spec (goals, personas, features, metrics, open questions)
-- **`FileStateStore`** — file-backed persistence with optimistic locking, so
-  runs survive restarts and can be resumed
+- **All six stage agents** — `IdeaAgent` (spec), `ArchAgent` (architecture),
+  `BackendAgent` / `FrontendAgent` (code skeletons), `QAAgent` (review with
+  routable issues), `DeployAgent` (Dockerfiles + compose); every agent uses
+  structured outputs against a JSON schema
+- **Artifact writer** — generated backend / frontend / infra files land in
+  `.manipula/workspace/<project-id>/` with path-traversal protection
+- **`FileStateStore`** — file-backed persistence with optimistic locking and
+  save-lock serialization, so runs survive restarts and can be resumed
 - **CLI runner** — `pnpm pipeline "<idea>"` starts a project,
   `pnpm pipeline --project <id>` resumes one
-- 56 unit tests, including a full pipeline run against a stubbed LLM
+- 72 unit tests, including full-pipeline runs (happy path and QA-retry)
+  against a stubbed LLM
 
 `packages/shared` (`@manipula/shared`) — types, pipeline/stage definitions,
 budget and failure policies shared across packages.
 
 ## What is not implemented yet
 
-- **Remaining stage agents** — `ArchAgent`, `BackendAgent`, `FrontendAgent`,
-  `QAAgent`, `DeployAgent`; the pipeline stops with a clear error when it
-  reaches an unimplemented stage
+- **Running the generated code** — QA is a static model review; nothing
+  executes or tests the generated project yet
+- **Approval checkpoints in the CLI** — the engine supports pausing before
+  DEPLOYING, but the CLI does not populate `approval_required_stages`
 - **API / UI** — the CLI is the only interface
 
 ## Running the pipeline
@@ -52,10 +59,11 @@ export ANTHROPIC_API_KEY=sk-ant-...   # or OLLAMA_ENABLED=true with local Ollama
 pnpm pipeline "a todo app for remote teams with offline sync"
 ```
 
-This creates a project, runs the SPECIFYING stage against a real model, saves
-state under `.manipula/projects/<id>.json`, and stops at ARCHITECTING (no
-agent yet). Resume later with `pnpm pipeline --project <id>`. Flags:
-`--budget <usd>` (default 25), `--state-dir <dir>`.
+This creates a project, runs all six stages against a real model, saves state
+under `.manipula/projects/<id>.json`, and writes the generated files to
+`.manipula/workspace/<id>/` (backend/, frontend/, infra/). Interrupted or
+failed runs resume with `pnpm pipeline --project <id>` — completed stages are
+skipped. Flags: `--budget <usd>` (default 25), `--state-dir <dir>`.
 
 ## Quick start
 

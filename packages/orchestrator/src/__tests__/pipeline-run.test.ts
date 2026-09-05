@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { Orchestrator } from '../engine/orchestrator';
 import { AgentRegistry } from '../agents/registry';
-import { registerDefaultAgents } from '../agents/defaults';
+import { IdeaAgent } from '../agents/idea-agent';
 import { IModelRouter, LLMClient } from '../agents/interfaces';
 import { FileStateStore } from '../state/file-state-store';
 import { makeProjectState } from './helpers/state-fixture';
@@ -50,7 +50,7 @@ describe('pipeline run with FileStateStore and IdeaAgent', () => {
 
   test('runs SPECIFYING, persists the spec, and stops at the first unimplemented agent', async () => {
     const registry = new AgentRegistry();
-    registerDefaultAgents(registry);
+    registry.registerClass('IdeaAgent', IdeaAgent);
 
     const initial = makeProjectState({ id: 'proj_e2e' });
     await store.save(initial, 1);
@@ -75,7 +75,7 @@ describe('pipeline run with FileStateStore and IdeaAgent', () => {
 
   test('needs_info pauses the run and persists the explanation', async () => {
     const registry = new AgentRegistry();
-    registerDefaultAgents(registry);
+    registry.registerClass('IdeaAgent', IdeaAgent);
 
     const initial = makeProjectState({ id: 'proj_short', rawIdea: 'app' });
     await store.save(initial, 1);
@@ -98,7 +98,7 @@ describe('pipeline run with FileStateStore and IdeaAgent', () => {
 
   test('resumed project skips the completed SPECIFYING stage', async () => {
     const registry = new AgentRegistry();
-    registerDefaultAgents(registry);
+    registry.registerClass('IdeaAgent', IdeaAgent);
     const router = makeRouter();
 
     const initial = makeProjectState({ id: 'proj_resume' });

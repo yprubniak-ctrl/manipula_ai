@@ -37,6 +37,13 @@ describe('StateMachine', () => {
     expect(next.meta.version).toBe(2);
   });
 
+  test('QA feedback loop transitions: regenerated stages can return to QA', () => {
+    expect(sm.canTransition('BACKEND_GEN', 'QA_VALIDATION')).toBe(true);
+    expect(sm.canTransition('FRONTEND_GEN', 'QA_VALIDATION')).toBe(true);
+    expect(sm.canTransition('QA_VALIDATION', 'BACKEND_GEN')).toBe(true);
+    expect(sm.canTransition('QA_VALIDATION', 'QA_VALIDATION')).toBe(true);
+  });
+
   test('invalid transition IDLE → BACKEND_GEN throws', () => {
     expect(() => sm.transition(makeState('IDLE'), 'BACKEND_GEN')).toThrow(InvalidTransitionError);
   });
