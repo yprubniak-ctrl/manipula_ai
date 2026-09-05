@@ -15,6 +15,7 @@ import { AgentRegistry } from '../agents/registry';
 import { registerDefaultAgents } from '../agents/defaults';
 import { ModelRouter } from '../routing/model-router';
 import { FileStateStore } from '../state/file-state-store';
+import { writeProjectArtifacts } from '../artifacts/writer';
 
 interface CliOptions {
   idea: string;
@@ -167,6 +168,10 @@ async function main(): Promise<void> {
   try {
     const finalState = await orchestrator.executeProject(projectId);
     printSummary(finalState, store);
+    if (finalState.status.stage === 'COMPLETE') {
+      const artifacts = await writeProjectArtifacts(finalState);
+      console.log(`Artifacts:  ${artifacts.files.length} file(s) written to ${artifacts.root}`);
+    }
     process.exit(finalState.status.stage === 'FAILED' ? 1 : 0);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

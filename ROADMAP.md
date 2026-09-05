@@ -19,15 +19,20 @@ no agents. The path to a first end-to-end run:
 - ~~Register agents in `AgentRegistry`; a minimal CLI entry point~~
   (`pnpm pipeline "<idea>"` / `--project <id>` to resume)
 
-## Step 4 — Full pipeline
+## Step 4 — Full pipeline ✅ (done)
 
-- Remaining agents: `ArchAgent`, `BackendAgent`, `FrontendAgent`, `QAAgent`,
-  `DeployAgent`
-- Integration test: full pipeline run against a mock LLM
-- Artifact output: write generated code to a workspace directory
+- ~~Remaining agents: `ArchAgent`, `BackendAgent`, `FrontendAgent`, `QAAgent`,
+  `DeployAgent`~~
+- ~~Integration test: full pipeline run against a mock LLM~~ (happy path and
+  QA-failure retry loop)
+- ~~Artifact output: write generated code to a workspace directory~~
+  (`.manipula/workspace/<id>/`)
 
 ## Later
 
+- Execute the generated project during QA (run it, hit the endpoints) instead
+  of static review only
+- CLI flag to require approval before DEPLOYING (engine already supports it)
 - Postgres-backed `StateStore` and a real `DistributedLock`
 - HTTP API and dashboard
 - Deployment automation for generated projects

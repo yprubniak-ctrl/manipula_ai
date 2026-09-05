@@ -34,11 +34,19 @@ export { RollbackHandler } from './snapshot/rollback';
 export { BaseAgent } from './agents/base-agent';
 export { AgentRegistry, agentRegistry } from './agents/registry';
 export type { AgentFactory } from './agents/registry';
+export { JsonStageAgent } from './agents/json-stage-agent';
 export { IdeaAgent, SPEC_SCHEMA } from './agents/idea-agent';
+export { ArchAgent, ARCHITECTURE_SCHEMA } from './agents/arch-agent';
+export { BackendAgent, BACKEND_SCHEMA } from './agents/backend-agent';
+export { FrontendAgent, FRONTEND_SCHEMA } from './agents/frontend-agent';
+export { QAAgent, QA_SCHEMA } from './agents/qa-agent';
+export { DeployAgent, INFRA_SCHEMA } from './agents/deploy-agent';
 export { registerDefaultAgents } from './agents/defaults';
 
-// State persistence
+// State persistence & artifacts
 export { FileStateStore, ProjectNotFoundError } from './state/file-state-store';
+export { writeProjectArtifacts } from './artifacts/writer';
+export type { WrittenArtifacts } from './artifacts/writer';
 
 // QA
 export { QAFeedbackLoop } from './qa/feedback-loop';

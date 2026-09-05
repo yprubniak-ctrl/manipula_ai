@@ -4,8 +4,7 @@
  */
 
 import { OrchestratorProjectState, AgentResponse } from '@manipula/shared';
-import { BaseAgent } from './base-agent';
-import { calculateCost } from '../budget/costs';
+import { JsonStageAgent } from './json-stage-agent';
 
 const SYSTEM_PROMPT = `You are an expert product manager and technical writer. You transform high-level product ideas into comprehensive, actionable product specifications.
 
@@ -81,7 +80,7 @@ export const SPEC_SCHEMA: Record<string, unknown> = {
   },
 };
 
-export class IdeaAgent extends BaseAgent {
+export class IdeaAgent extends JsonStageAgent {
   readonly OWNED_KEYS = ['spec'];
 
   async execute(state: OrchestratorProjectState): Promise<AgentResponse> {
@@ -92,36 +91,13 @@ export class IdeaAgent extends BaseAgent {
       );
     }
 
-    try {
-      const response = await this.callLLM(
-        SYSTEM_PROMPT,
-        this.buildUserPrompt(state.inputs),
-        SPEC_SCHEMA,
-        'medium'
-      );
-
-      let spec: Record<string, unknown>;
-      try {
-        spec = JSON.parse(response.content) as Record<string, unknown>;
-      } catch {
-        return this.buildErrorResponse(
-          new Error('IdeaAgent: model response was not valid JSON')
-        );
-      }
-
-      const { model, input_tokens, output_tokens } = response.usage;
-      return this.buildSuccessResponse(
-        { spec },
-        {
-          model,
-          input_tokens,
-          output_tokens,
-          cost_usd: calculateCost(model, input_tokens, output_tokens),
-        }
-      );
-    } catch (err) {
-      return this.buildErrorResponse(err);
-    }
+    return this.runJsonStage(
+      'spec',
+      SYSTEM_PROMPT,
+      this.buildUserPrompt(state.inputs),
+      SPEC_SCHEMA,
+      'medium'
+    );
   }
 
   private buildUserPrompt(inputs: OrchestratorProjectState['inputs']): string {
