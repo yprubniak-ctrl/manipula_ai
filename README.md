@@ -33,7 +33,7 @@ engine, implemented against [manipula-orchestrator-spec.md](./manipula-orchestra
   runs survive restarts and can be resumed
 - **CLI runner** — `pnpm pipeline "<idea>"` starts a project,
   `pnpm pipeline --project <id>` resumes one
-- 50 unit tests, including a full pipeline run against a stubbed LLM
+- 56 unit tests, including a full pipeline run against a stubbed LLM
 
 `packages/shared` (`@manipula/shared`) — types, pipeline/stage definitions,
 budget and failure policies shared across packages.

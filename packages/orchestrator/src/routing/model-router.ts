@@ -129,6 +129,8 @@ export class LocalLLMClient implements LLMClient {
         temperature: params.temperature ?? 0.2,
         seed: params.seed ?? 42,
       },
+      // Ollama structured outputs: constrain the response to the JSON schema
+      ...(params.responseSchema ? { format: params.responseSchema } : {}),
     };
 
     const resp = await fetch(`${this.node.url}/api/chat`, {

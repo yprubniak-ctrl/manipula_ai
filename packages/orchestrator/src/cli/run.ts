@@ -108,7 +108,10 @@ function printSummary(state: OrchestratorProjectState, store: FileStateStore): v
   console.log(
     `Budget:     $${state.budget.spent_usd.toFixed(4)} spent of $${state.budget.limit_usd.toFixed(2)}`
   );
-  if (state.status.error) console.log(`Error:      ${state.status.error}`);
+  if (state.status.error) {
+    const label = state.status.stage === 'PENDING_REVIEW' ? 'Needs input' : 'Error';
+    console.log(`${label}: ${state.status.error}`);
+  }
   if (state.spec) {
     const spec = state.spec as Record<string, unknown>;
     const features = Array.isArray(spec.features) ? spec.features.length : 0;

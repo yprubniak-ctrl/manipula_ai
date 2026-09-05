@@ -55,4 +55,42 @@ describe('FileStateStore', () => {
     await store.save(makeProjectState({ id: 'proj_e' }), 1);
     expect(await store.exists('proj_e')).toBe(true);
   });
+
+  test('concurrent saves with the same expected version: exactly one wins', async () => {
+    const state = makeProjectState({ id: 'proj_race' });
+    await store.save(state, 1);
+
+    const writerA = JSON.parse(JSON.stringify(state));
+    writerA.meta.version = 2;
+    writerA.status.stage = 'SPECIFYING';
+    const writerB = JSON.parse(JSON.stringify(state));
+    writerB.meta.version = 2;
+    writerB.status.stage = 'FAILED';
+
+    const results = await Promise.allSettled([
+      store.save(writerA, 1),
+      store.save(writerB, 1),
+    ]);
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter(
+      (r): r is PromiseRejectedResult => r.status === 'rejected'
+    );
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0].reason).toBeInstanceOf(OptimisticLockError);
+    expect((await store.load('proj_race')).meta.version).toBe(2);
+  });
+
+  test('a stale lock file does not wedge saves forever', async () => {
+    const state = makeProjectState({ id: 'proj_stale' });
+    const lockPath = `${store.fileFor('proj_stale')}.lock`;
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(lockPath, '');
+    const past = new Date(Date.now() - 60_000);
+    fs.utimesSync(lockPath, past, past);
+
+    await store.save(state, 1);
+    expect((await store.load('proj_stale')).meta.id).toBe('proj_stale');
+  });
 });
